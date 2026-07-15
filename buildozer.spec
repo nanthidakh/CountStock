@@ -10,20 +10,15 @@ icon.filename = %(source.dir)s/barcode.png
 
 version = 1.1
 
-
 source.dir = .
-
 
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
-
 requirements = python3,kivy,requests
-
 
 p4a.branch = release-2024.01.21
 
-
-android.api = 28
+android.api = 25
 
 android.minapi = 23
 
@@ -34,3 +29,4 @@ android.accept_sdk_license = True
 #android.archs = armeabi-v7a,arm64-v8a
 android.archs = armeabi-v7a
 
+android.enable_androidx = False
