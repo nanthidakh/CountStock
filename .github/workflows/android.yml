@@ -53,12 +53,13 @@ jobs:
 
           pip install \
             buildozer==1.5.0 \
-            Cython==0.29.36
+            Cython==0.29.36 \
+            python-for-android==2024.01.21
 
 
 
       # ==========================
-      # Set Java 17
+      # Java 17
       # ==========================
       - name: Set Java 17
         run: |
@@ -70,7 +71,7 @@ jobs:
 
 
       # ==========================
-      # Setup Android SDK
+      # Android SDK
       # ==========================
       - name: Setup Android SDK
         shell: bash
@@ -84,19 +85,13 @@ jobs:
 
 
           if [ -z "$SDKMANAGER" ]; then
-
               echo "sdkmanager not found"
-
               exit 1
-
           fi
 
 
-          echo "sdkmanager:"
-          echo $SDKMANAGER
-
-
           echo "$(dirname $SDKMANAGER)" >> $GITHUB_PATH
+
 
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
@@ -116,47 +111,25 @@ jobs:
 
 
       # ==========================
-      # Check Android Tools
-      # ==========================
-      - name: Check Android Tools
-        run: |
-
-
-          echo "SDK Manager"
-
-          which sdkmanager
-
-
-          echo "Build Tools"
-
-          ls $ANDROID_HOME/build-tools
-
-
-
-          echo "AIDL"
-
-          find $ANDROID_HOME -name aidl
-
-
-
-          echo "NDK"
-
-          ls $ANDROID_HOME/ndk
-
-
-
-      # ==========================
       # Clean Buildozer
       # ==========================
       - name: Clean Buildozer
         run: |
 
-
           rm -rf ~/.buildozer
+
+          rm -rf .buildozer
 
 
           mkdir -p ~/.buildozer/android/platform
 
+
+
+      # ==========================
+      # Link Android SDK
+      # ==========================
+      - name: Link Android SDK
+        run: |
 
 
           ln -s \
@@ -167,19 +140,46 @@ jobs:
 
 
       # ==========================
-      # Setup NDK for Buildozer
+      # Link Android NDK
       # ==========================
-      - name: Setup NDK
+      - name: Link Android NDK
         run: |
-
-
-          mkdir -p ~/.buildozer/android/platform
-
 
 
           ln -s \
           $ANDROID_HOME/ndk/25.2.9519653 \
-          ~/.buildozer/android/platform/android-ndk-r25b
+          ~/.buildozer/android/platform/android-ndk-r25.2.9519653
+
+
+
+
+      # ==========================
+      # Verify
+      # ==========================
+      - name: Verify Android Setup
+        run: |
+
+
+          echo "===== SDK ====="
+
+          ls -la ~/.buildozer/android/platform/android-sdk
+
+
+          echo "===== NDK ====="
+
+          ls -la ~/.buildozer/android/platform/android-ndk-r25.2.9519653
+
+
+
+          echo "===== Build Tools ====="
+
+          ls $ANDROID_HOME/build-tools
+
+
+
+          echo "===== AIDL ====="
+
+          find $ANDROID_HOME -name aidl
 
 
 
@@ -189,7 +189,6 @@ jobs:
       # ==========================
       - name: Build APK
         run: |
-
 
           buildozer -v android debug
 
