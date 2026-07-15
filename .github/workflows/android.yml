@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
@@ -11,16 +11,23 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Build APK
+      - name: Build with Buildozer
         uses: Digreatbrian/buildozer-action@v2
         with:
           buildozer_version: stable
 
+      - name: List build output
+        if: always()
+        run: |
+          ls -R
+          ls -R bin || true
+
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: APK
+          name: CountStock-APK
           path: bin/*.apk
