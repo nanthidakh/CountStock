@@ -6,25 +6,74 @@ on:
       - main
   workflow_dispatch:
 
+
 jobs:
   build:
+
     runs-on: ubuntu-22.04
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
+
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
+            libffi-dev \
+            libssl-dev
+
           pip install --upgrade pip
-          pip install --upgrade buildozer Cython==0.29.36
+          pip install buildozer==1.5.0 Cython==0.29.36
+
+
+      - name: Setup Android SDK
+        run: |
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+          yes | sdkmanager --licenses || true
+
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+
+      - name: Configure Buildozer SDK
+        run: |
+
+          rm -rf ~/.buildozer
+
+          mkdir -p ~/.buildozer/android/platform
+
+          ln -s \
+          $ANDROID_HOME \
+          ~/.buildozer/android/platform/android-sdk
+
 
       - name: Build APK
         run: |
-          # บังคับลบ Cache เก่าที่อาจจะพัง
-          rm -rf .buildozer
           buildozer -v android debug
+
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
