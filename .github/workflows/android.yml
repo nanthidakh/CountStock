@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 
@@ -17,15 +18,22 @@ jobs:
     steps:
 
 
+      # ==========================
+      # Checkout
+      # ==========================
       - name: Checkout
         uses: actions/checkout@v4
 
 
 
+      # ==========================
+      # Install Dependencies
+      # ==========================
       - name: Install dependencies
         run: |
 
           sudo apt update
+
 
           sudo apt install -y \
             git \
@@ -38,11 +46,13 @@ jobs:
             pkg-config \
             zlib1g-dev \
             libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
             libffi-dev \
             libssl-dev
 
 
-          pip install --upgrade pip
+          python3 -m pip install --upgrade pip
 
 
           pip install \
@@ -52,69 +62,43 @@ jobs:
 
 
 
-      - name: Setup Android SDK
+      # ==========================
+      # Java 17
+      # ==========================
+      - name: Setup Java
         run: |
 
-
-          SDKMANAGER=$(find $ANDROID_HOME -name sdkmanager | head -1)
-
-
-          echo "$(dirname $SDKMANAGER)" >> $GITHUB_PATH
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
 
 
-          yes | $SDKMANAGER --licenses || true
-
-
-
-          $SDKMANAGER \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;25.2.9519653"
-
-
-
-
-      - name: Configure Buildozer
+      # ==========================
+      # Clean
+      # ==========================
+      - name: Clean Buildozer
         run: |
 
-
-          mkdir -p ~/.buildozer/android/platform
-
-
-          ln -s \
-          $ANDROID_HOME \
-          ~/.buildozer/android/platform/android-sdk
-
-
-
-          ln -s \
-          $ANDROID_HOME/ndk/25.2.9519653 \
-          ~/.buildozer/android/platform/android-ndk-r25b
-
-
-
-      - name: Clean project cache
-        run: |
+          rm -rf ~/.buildozer
 
           rm -rf .buildozer
 
 
 
+
+      # ==========================
+      # Build APK
+      # ==========================
       - name: Build APK
-        env:
-
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
-
         run: |
 
           buildozer -v android debug
 
 
 
+
+      # ==========================
+      # Upload APK
+      # ==========================
       - name: Upload APK
         uses: actions/upload-artifact@v4
 
