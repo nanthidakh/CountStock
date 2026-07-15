@@ -14,6 +14,7 @@ jobs:
 
     steps:
 
+
       # ==========================
       # Checkout Source
       # ==========================
@@ -21,11 +22,13 @@ jobs:
         uses: actions/checkout@v4
 
 
+
       # ==========================
-      # Install Linux Dependencies
+      # Install Dependencies
       # ==========================
       - name: Install dependencies
         run: |
+
           sudo apt-get update
 
           sudo apt-get install -y \
@@ -44,11 +47,26 @@ jobs:
             libffi-dev \
             libssl-dev
 
+
           python3 -m pip install --upgrade pip
+
 
           pip install \
             buildozer==1.5.0 \
             Cython==0.29.36
+
+
+
+      # ==========================
+      # Set Java 17
+      # ==========================
+      - name: Set Java 17
+        run: |
+
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+
+          echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> $GITHUB_PATH
+
 
 
       # ==========================
@@ -58,76 +76,111 @@ jobs:
         shell: bash
         run: |
 
+
           echo "ANDROID_HOME=$ANDROID_HOME"
 
-          echo "Searching sdkmanager..."
 
           SDKMANAGER=$(find $ANDROID_HOME -name sdkmanager | head -n 1)
 
+
           if [ -z "$SDKMANAGER" ]; then
+
               echo "sdkmanager not found"
+
               exit 1
+
           fi
 
 
-          echo "Found:"
+          echo "sdkmanager:"
           echo $SDKMANAGER
 
 
-          SDK_PATH=$(dirname $SDKMANAGER)
-
-          echo $SDK_PATH >> $GITHUB_PATH
+          echo "$(dirname $SDKMANAGER)" >> $GITHUB_PATH
 
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
 
-          echo "Accept licenses"
 
           yes | $SDKMANAGER --licenses || true
 
-
-          echo "Install Android packages"
 
 
           $SDKMANAGER \
             "platform-tools" \
             "platforms;android-35" \
-            "build-tools;35.0.0"
+            "build-tools;35.0.0" \
+            "ndk;25.2.9519653"
+
 
 
 
       # ==========================
-      # Verify Android Tools
+      # Check Android Tools
       # ==========================
       - name: Check Android Tools
         run: |
 
+
+          echo "SDK Manager"
+
           which sdkmanager
 
-          sdkmanager --version
 
-          echo "Build Tools:"
+          echo "Build Tools"
+
           ls $ANDROID_HOME/build-tools
 
-          echo "AIDL:"
+
+
+          echo "AIDL"
+
           find $ANDROID_HOME -name aidl
 
 
 
+          echo "NDK"
+
+          ls $ANDROID_HOME/ndk
+
+
+
       # ==========================
-      # Clear Buildozer Cache
+      # Clean Buildozer
       # ==========================
       - name: Clean Buildozer
         run: |
 
+
           rm -rf ~/.buildozer
 
+
           mkdir -p ~/.buildozer/android/platform
+
 
 
           ln -s \
           $ANDROID_HOME \
           ~/.buildozer/android/platform/android-sdk
+
+
+
+
+      # ==========================
+      # Setup NDK for Buildozer
+      # ==========================
+      - name: Setup NDK
+        run: |
+
+
+          mkdir -p ~/.buildozer/android/platform
+
+
+
+          ln -s \
+          $ANDROID_HOME/ndk/25.2.9519653 \
+          ~/.buildozer/android/platform/android-ndk-r25b
+
 
 
 
@@ -137,7 +190,9 @@ jobs:
       - name: Build APK
         run: |
 
+
           buildozer -v android debug
+
 
 
 
@@ -146,6 +201,7 @@ jobs:
       # ==========================
       - name: Upload APK
         uses: actions/upload-artifact@v4
+
         with:
 
           name: CountStock-APK
