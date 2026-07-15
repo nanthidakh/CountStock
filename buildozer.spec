@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy==2.3.0,kivymd==1.2.0,sqlite3,pyjnius,requires
+requirements = python3,kivy,kivymd,requests
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -104,10 +104,10 @@ android.permissions = android.permission.INTERNET, android.permission.VIBRATE
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-android.api = 33
+android.api = 34
 
 # (int) Minimum API your APK / AAB will support.
-#android.minapi = 24
+android.minapi = 24
 
 # (int) Android SDK version to use
 #android.sdk = 20
@@ -459,7 +459,7 @@ warn_on_root = 1
 #
 #   Buildozer supports lists - i.e.
 #       [app]
-#       source.include_exts = py,png,jpg
+#       source.include_exts = py,kv,png,jpg,json,ttf,db
 #       #                   ^ This is a list.
 #
 #       [app:source.include_exts]
