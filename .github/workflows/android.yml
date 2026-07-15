@@ -4,32 +4,36 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 
 jobs:
+
   build:
 
     runs-on: ubuntu-22.04
+
 
     steps:
 
 
       # ==========================
-      # Checkout Source
+      # Checkout
       # ==========================
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
 
 
 
       # ==========================
-      # Install Dependencies
+      # Linux Dependencies
       # ==========================
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
 
           sudo apt-get update
+
 
           sudo apt-get install -y \
             git \
@@ -48,25 +52,29 @@ jobs:
             libssl-dev
 
 
+
           python3 -m pip install --upgrade pip
 
 
           pip install \
             buildozer==1.5.0 \
-            Cython==0.29.36 \
-            python-for-android==2024.01.21
+            Cython==0.29.36
+
+
 
 
 
       # ==========================
-      # Java 17
+      # Java
       # ==========================
-      - name: Set Java 17
+      - name: Setup Java 17
         run: |
 
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
           echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> $GITHUB_PATH
+
+
 
 
 
@@ -81,23 +89,30 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
 
 
+
           SDKMANAGER=$(find $ANDROID_HOME -name sdkmanager | head -n 1)
 
 
+
           if [ -z "$SDKMANAGER" ]; then
-              echo "sdkmanager not found"
-              exit 1
+
+            echo "sdkmanager not found"
+
+            exit 1
+
           fi
 
 
-          echo "$(dirname $SDKMANAGER)" >> $GITHUB_PATH
 
+          echo "$(dirname $SDKMANAGER)" >> $GITHUB_PATH
 
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
 
 
+
           yes | $SDKMANAGER --licenses || true
+
 
 
 
@@ -110,45 +125,46 @@ jobs:
 
 
 
+
+
       # ==========================
-      # Clean Buildozer
+      # Clean
       # ==========================
-      - name: Clean Buildozer
+      - name: Clean Buildozer Cache
         run: |
+
 
           rm -rf ~/.buildozer
 
           rm -rf .buildozer
 
 
-          mkdir -p ~/.buildozer/android/platform
-
 
 
       # ==========================
-      # Link Android SDK
+      # Prepare Buildozer Platform
       # ==========================
-      - name: Link Android SDK
+      - name: Configure Buildozer Android
         run: |
+
+
+          mkdir -p .buildozer/android/platform
+
+
 
 
           ln -s \
           $ANDROID_HOME \
-          ~/.buildozer/android/platform/android-sdk
+          .buildozer/android/platform/android-sdk
 
 
-
-
-      # ==========================
-      # Link Android NDK
-      # ==========================
-      - name: Link Android NDK
-        run: |
 
 
           ln -s \
           $ANDROID_HOME/ndk/25.2.9519653 \
-          ~/.buildozer/android/platform/android-ndk-r25.2.9519653
+          .buildozer/android/platform/android-ndk-r25b
+
+
 
 
 
@@ -156,22 +172,29 @@ jobs:
       # ==========================
       # Verify
       # ==========================
-      - name: Verify Android Setup
+      - name: Verify Android Environment
         run: |
+
+
+          echo "===== PLATFORM ====="
+
+          ls -la .buildozer/android/platform
+
 
 
           echo "===== SDK ====="
 
-          ls -la ~/.buildozer/android/platform/android-sdk
+          ls -la .buildozer/android/platform/android-sdk
+
 
 
           echo "===== NDK ====="
 
-          ls -la ~/.buildozer/android/platform/android-ndk-r25.2.9519653
+          ls -la .buildozer/android/platform/android-ndk-r25b
 
 
 
-          echo "===== Build Tools ====="
+          echo "===== BUILD TOOLS ====="
 
           ls $ANDROID_HOME/build-tools
 
@@ -184,19 +207,23 @@ jobs:
 
 
 
+
       # ==========================
       # Build APK
       # ==========================
       - name: Build APK
         run: |
 
+
           buildozer -v android debug
 
 
 
 
+
+
       # ==========================
-      # Upload APK
+      # Upload
       # ==========================
       - name: Upload APK
         uses: actions/upload-artifact@v4
