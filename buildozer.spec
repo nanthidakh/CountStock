@@ -104,16 +104,16 @@ android.permissions = android.permission.INTERNET, android.permission.VIBRATE
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-android.api = 34
+android.api = 35
 
 # (int) Minimum API your APK / AAB will support.
-android.minapi = 24
+android.minapi = 23
 
 # (int) Android SDK version to use
 #android.sdk = 20
 
 # (str) Android NDK version to use
-#android.ndk = 23b
+android.ndk = 25b
 
 # (int) Android NDK API to use. This is the minimum API your app will support, it should usually match android.minapi.
 #android.ndk_api = 21
