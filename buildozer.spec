@@ -7,6 +7,9 @@ package.name = countstock
 package.domain = org.example
 
 
+version = 1.0
+
+
 source.dir = .
 
 
