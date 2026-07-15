@@ -31,6 +31,19 @@ jobs:
           pip install cython==0.29.36
 
 
+      - name: Setup Android SDK PATH
+        run: |
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/build-tools/35.0.0" >> $GITHUB_PATH
+
+
+      - name: Check Android SDK
+        run: |
+          echo $ANDROID_HOME
+          find $ANDROID_HOME -name sdkmanager
+
+
       - name: Accept Android SDK licenses
         run: |
           yes | sdkmanager --licenses || true
@@ -39,9 +52,9 @@ jobs:
       - name: Install Android SDK packages
         run: |
           sdkmanager \
-          "platform-tools" \
-          "platforms;android-35" \
-          "build-tools;35.0.0"
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
 
       - name: Clean Buildozer cache
