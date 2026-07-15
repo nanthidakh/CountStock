@@ -6,7 +6,7 @@ package.name = countstock
 
 package.domain = org.example
 
-icon.filename = %(source.dir)s/icon.png
+icon.filename = %(source.dir)s/barcode.png
 
 version = 1.1
 
