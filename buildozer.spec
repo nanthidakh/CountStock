@@ -14,7 +14,7 @@ source.dir = .
 
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
-requirements = python3,kivy,kivymd,requests
+requirements = python3,kivy,kivymd,requests,pyjnius
 
 p4a.branch = release-2024.01.21
 
