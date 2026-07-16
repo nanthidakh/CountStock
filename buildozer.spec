@@ -2,7 +2,7 @@
 
 title = HWKCountStock
 
-package.name = countstock
+package.name = CountStockV1
 
 package.domain = org.example
 
@@ -14,7 +14,7 @@ source.dir = .
 
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
-requirements = python3,kivy,requests
+requirements = python3,kivy,kivymd,requests
 
 p4a.branch = release-2024.01.21
 
@@ -26,7 +26,7 @@ android.ndk = 25b
 
 android.accept_sdk_license = True
 
-#android.archs = armeabi-v7a,arm64-v8a
-android.archs = armeabi-v7a
+android.archs = armeabi-v7a,arm64-v8a
+#android.archs = armeabi-v7a
 
 #android.enable_androidx = False

@@ -1,3 +1,4 @@
 kivy
 kivymd
 requests
+python3
