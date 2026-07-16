@@ -18,7 +18,7 @@ requirements = python3,kivy,requests
 
 p4a.branch = release-2024.01.21
 
-android.api = 25
+android.api = 28
 
 android.minapi = 23
 
