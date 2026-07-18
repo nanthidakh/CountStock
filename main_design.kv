@@ -73,16 +73,26 @@ ScreenManager:
         orientation: 'vertical'
         md_bg_color: 0.98, 0.98, 0.98, 1
         
-        MDTopAppBar:
-            title: "ตั้งค่า"
-            font_name: "ThaiFont"
-            elevation: 4
-        MDFlatButton:
-            text: "กลับ"
-            font_name: "ThaiFont"
-            font_size: "12sp"  # ปรับขนาดให้เล็กลงได้ตามต้องการ
-            pos_hint: {"center_y": .95} # ปรับตำแหน่งให้ตรงกับแถบด้านบน
-            on_release: root.go_back()  
+        # 1. ส่วน Header (รวมปุ่มกลับและชื่อหน้า)
+        MDBoxLayout:
+            size_hint_y: None
+            height: "56dp"
+            #md_bg_color: app.theme_cls.primary_color
+            md_bg_color: 0.5, 0.5, 0.5, 1
+            
+            MDFlatButton:
+                text: "กลับ"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+                font_name: "ThaiFont"
+                on_release: root.go_back()
+            
+            MDLabel:
+                text: "1.Config"
+                font_name: "ThaiFont"
+                halign: "center"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
             
         MDScrollView:
             MDBoxLayout:
@@ -149,16 +159,26 @@ ScreenManager:
         orientation: 'vertical'
         md_bg_color: 0.98, 0.98, 0.98, 1
         
-        MDTopAppBar:
-            title: "Import Product Data"
-            font_name: "ThaiFont"
-            elevation: 4
-        MDFlatButton:
-            text: "กลับ"
-            font_name: "ThaiFont"
-            font_size: "12sp"  # ปรับขนาดให้เล็กลงได้ตามต้องการ
-            pos_hint: {"center_y": .95} # ปรับตำแหน่งให้ตรงกับแถบด้านบน
-            on_release: root.go_back()  
+        # 1. ส่วน Header (รวมปุ่มกลับและชื่อหน้า)
+        MDBoxLayout:
+            size_hint_y: None
+            height: "56dp"
+            md_bg_color: app.theme_cls.primary_color
+            #md_bg_color: 0.1, 0.6, 0.3, 1
+            
+            MDFlatButton:
+                text: "กลับ"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+                font_name: "ThaiFont"
+                on_release: root.go_back()
+            
+            MDLabel:
+                text: "2.Import Product Data"
+                font_name: "ThaiFont"
+                halign: "center"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
             
         MDBoxLayout:
             orientation: 'vertical'
@@ -192,112 +212,111 @@ ScreenManager:
         orientation: 'vertical'
         md_bg_color: 0.98, 0.98, 0.98, 1
         
-        MDTopAppBar:
-            title: "3. เก็บข้อมูลสต็อกสินค้า"
-            font_name: "ThaiFont"
-            elevation: 4
-        MDFlatButton:
-            text: "กลับ"
-            font_name: "ThaiFont"
-            font_size: "12sp"  # ปรับขนาดให้เล็กลงได้ตามต้องการ
-            pos_hint: {"center_y": .95} # ปรับตำแหน่งให้ตรงกับแถบด้านบน
-            on_release: root.go_back()             
+        # 1. ส่วน Header (รวมปุ่มกลับและชื่อหน้า)
+        MDBoxLayout:
+            size_hint_y: None
+            height: "56dp"
+            #md_bg_color: app.theme_cls.primary_color
+            md_bg_color: 0.9, 0.5, 0.1, 1
+
+            MDFlatButton:
+                text: "กลับ"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+                font_name: "ThaiFont"
+                on_release: root.go_back()
+            
+            MDLabel:
+                text: "3. เก็บข้อมูลสต็อกสินค้า"
+                font_name: "ThaiFont"
+                halign: "center"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+        
+        # 2. ส่วนเนื้อหา
         MDBoxLayout:
             orientation: 'vertical'
-            padding: "15dp"
-            spacing: "12dp"
+            padding: "10dp"
+            spacing: "10dp"
             
-            # --- ส่วนระบุตำแหน่ง และ ชื่อพนักงาน ---
+            # ช่อง Location & Staff
             MDBoxLayout:
                 orientation: 'horizontal'
                 size_hint_y: None
-                height: "50dp"
+                height: "60dp"
                 spacing: "10dp"
-                
                 MDTextField:
                     id: txt_location
-                    hint_text: "ตำแหน่ง/ชั้นวาง"
+                    hint_text: "Location"
                     font_name: "ThaiFont"
-                    font_name_hint_text: "ThaiFont"
                     mode: "rectangle"
-                    text: "LOC-01"
-                    
+                    text: "001.01.01"
                 MDTextField:
                     id: txt_staff
-                    hint_text: "ชื่อผู้ตรวจนับ"
+                    hint_text: "Staff:"
                     font_name: "ThaiFont"
-                    font_name_hint_text: "ThaiFont"
                     mode: "rectangle"
                     text: "Staff-A"
             
-            # --- ช่องสแกนบาร์โค้ดแบบเต็มหน้ากว้าง ไม่มีปุ่มโหมดใดๆ ทั้งสิ้น ---
+            # ช่องสแกน (เน้นชัดเจน)
             MDTextField:
                 id: txt_barcode
-                hint_text: "ยิงบาร์โค้ดสินค้าที่นี่ (ระบบจะบันทึกอัตโนมัติ)"
+                hint_text: "ScanBarcode Here"
                 font_name: "ThaiFont"
-                font_name_hint_text: "ThaiFont"
                 mode: "rectangle"
                 multiline: False
                 size_hint_y: None
-                height: "55dp"
-                focus: True  
-                on_text_validate: root.on_barcode_scan()  
-                
-            # --- ส่วนแสดงชื่อสินค้าที่ยิงเจอล่าสุด ---
+                height: "30dp"
+                keyboard_suggestions: False
+                focus: True
+                # แก้ไขการเรียกซ้ำซ้อน
+                on_focus: if self.focus: app.release_kb()
+                on_text_validate: root.on_barcode_scan()
+            
+            # ส่วนแสดงสินค้า
             MDCard:
                 orientation: 'vertical'
-                padding: "12dp"
+                padding: "10dp"
                 size_hint_y: None
-                height: "90dp"
+                height: "80dp"
                 md_bg_color: 0.9, 0.95, 1, 1
-                radius: [8, 8, 8, 8]
-                
                 MDLabel:
                     id: lbl_product_name
                     text: "ชื่อสินค้า: [กรุณายิงบาร์โค้ด]"
                     font_name: "ThaiFont"
-                    theme_text_color: "Primary"
-                    font_style: "Subtitle1"
-                    
                 MDBoxLayout:
-                    orientation: 'horizontal'
                     MDLabel:
                         id: lbl_product_code
                         text: "รหัส: -"
                         font_name: "ThaiFont"
-                        theme_text_color: "Secondary"
-                        font_style: "Caption"
                     MDLabel:
                         id: lbl_unit
                         text: "หน่วย: -"
                         font_name: "ThaiFont"
-                        theme_text_color: "Secondary"
-                        font_style: "Caption"
                         halign: "right"
-                
-            # --- ส่วนล่าง: ตารางประวัติการสแกนล่าสุด ---
+            
+            # ตารางรายการล่าสุด
             MDLabel:
-                text: "รายการที่สแกนล่าสุด 5 รายการ:"
+                text: "รายการที่สแกนล่าสุด:"
                 font_name: "ThaiFont"
-                font_style: "Subtitle2"
-                theme_text_color: "Secondary"
                 size_hint_y: None
                 height: "25dp"
                 
             MDScrollView:
                 MDList:
-                    id: list_recent_scans  
+                    id: list_recent_scans
 
 <ExportScreen>:
     name: 'export_screen'
     MDBoxLayout:
         orientation: 'vertical'
         md_bg_color: 0.98, 0.98, 0.98, 1
-        
+
         MDTopAppBar:
             title: "4. Export Data"
             font_name: "ThaiFont"
-            elevation: 4
+            elevation: 2
+            md_bg_color: 0.1, 0.5, 0.8, 1
         MDFlatButton:
             text: "กลับ"
             font_name: "ThaiFont"

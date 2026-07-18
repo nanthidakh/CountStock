@@ -100,7 +100,7 @@ def get_recent_scans_from_table(limit=5):
     query = """
         SELECT s.barcode, p.product_name, s.qty, s.scan_date, s.location
         FROM Countstock_scan_data s
-        LEFT JOIN main_products p ON s.barcode = p.barcode
+        LEFT JOIN main_products p ON s.product_code = p.product_code
         ORDER BY s.id DESC LIMIT ?
     """
     cursor.execute(query, (limit,))

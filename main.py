@@ -9,6 +9,7 @@ from datetime import datetime
 from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.text import LabelBase
+from kivy.utils import platform
 from kivy.core.window import Window
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.dialog import MDDialog
@@ -137,7 +138,9 @@ class ImportScreen(MDScreen):
 class StockCountScreen(MDScreen):
     edit_dialog = None
     edit_text_field = None
-
+    def release_kb(self):
+        if platform == 'android':
+            Window.release_keyboard()
     def go_back(self):
         self.stop_android_scanner()
         self.manager.current = 'menu_screen'
@@ -214,26 +217,44 @@ class StockCountScreen(MDScreen):
         """รองรับการเรียกใช้งานจากไฟล์ main_design.kv เมื่อกด Enter"""
         self.on_windows_keyboard_validate()
     def process_barcode(self, barcode_input):
-        """ฟังก์ชันหลักในการตรวจสอบและบันทึกบาร์โค้ด"""
+        """ฟังก์ชันหลักในการตรวจสอบและบันทึกข้อมูล"""
+        barcode_input = barcode_input.strip()
         location = self.ids.txt_location.text.strip()
         staff = self.ids.txt_staff.text.strip()
         
+        # 1. ตรวจสอบข้อมูลเบื้องต้น
         if not location or not staff:
             self.play_sound(success=False)
-            MDApp.get_running_app().show_alert("⚠️ คำเตือน", "กรุณาระบุตำแหน่งและผู้ตรวจนับก่อนทำการสแกน")
+            MDApp.get_running_app().show_alert("⚠️ คำเตือน", "กรุณาระบุตำแหน่งและผู้ตรวจนับ")
+            self.reset_scan_field()
             return
             
-        product = query_product(barcode_input)
+        # 2. ค้นหาจากบาร์โค้ดก่อน (ตามฟังก์ชันเดิมของคุณ)
+        product = query_product(barcode_input) 
+        
+        # 3. ถ้าหาจากบาร์โค้ดไม่พบ ให้ลองหาจาก รหัสสินค้า (Product Code)
         if not product:
-            self.play_sound(success=False) # เสียงยิงผิดพลาด
-            MDApp.get_running_app().show_alert("❌ ไม่พบข้อมูลสินค้า", f"ไม่พบบาร์โค้ด [{barcode_input}] ในระบบคลังสินค้า")
+            try:
+                conn = sqlite3.connect('inventory.db')
+                cursor = conn.cursor()
+                # เปลี่ยนชื่อตาราง/คอลัมน์ให้ตรงกับฐานข้อมูลของคุณ (เช่น products)
+                cursor.execute("SELECT product_code, product_name, unit FROM main_products WHERE TRIM(product_code)=?", (barcode_input,))
+                product = cursor.fetchone()
+                conn.close()
+            except Exception as e:
+                print(f"Error searching by code: {e}")
+            
+        # 4. ถ้าหาไม่เจอทั้ง 2 อย่าง ให้แจ้งเตือน
+        if not product:
+            self.play_sound(success=False)
+            MDApp.get_running_app().show_alert("❌ ไม่พบข้อมูล", f"ไม่พบสินค้า [{barcode_input}] ในระบบ")
+            self.reset_scan_field()
             return
 
+        # 5. หากพบสินค้า (ไม่ว่าจะมาจากบาร์โค้ดหรือรหัสสินค้า) ให้บันทึกข้อมูล
         product_code, product_name, unit_name = product
-        self.ids.lbl_product_code.text = f"รหัส: {product_code}"
-        self.ids.lbl_product_name.text = f"ชื่อสินค้า: {product_name}"
-        self.ids.lbl_unit.text = f"หน่วย: {unit_name}"
-
+        
+        # ส่วนบันทึกลง DB ตามโค้ดเดิมของคุณ
         try:
             conn = sqlite3.connect('inventory.db') 
             cursor = conn.cursor()
@@ -248,12 +269,23 @@ class StockCountScreen(MDScreen):
                 self.ids.lbl_product_name.text = f"✓ [ยิงซ้ำ +1] รวม: {new_qty} {unit_name}"
             else:
                 insert_scan_result_to_db(location, staff, product_code, barcode_input, 1)
+                self.ids.lbl_product_code.text = f"รหัส: {product_code}"
+                self.ids.lbl_product_name.text = f"ชื่อสินค้า: {product_name}"
+                self.ids.lbl_unit.text = f"หน่วย: {unit_name}"
                 
             conn.close()
-            self.play_sound(success=True) # เสียงยิงสำเร็จ
+            self.play_sound(success=True)
         except Exception as e:
             print(f"Error Saving Scan: {e}")
 
+        # 6. เคลียร์ช่องและค้าง Cursor พร้อมยิงต่อ
+        self.reset_scan_field()
+
+    def reset_scan_field(self):
+        """ช่วยให้โค้ดสะอาดและ Cursor กลับมาพร้อมสแกนใหม่"""
+        self.ids.txt_barcode.text = ""
+        self.ids.txt_barcode.focus = True
+        self.release_kb() # ปิดคีย์บอร์ดที่เด้งขึ้นมา
         self.update_recent_list()
 
     def update_recent_list(self):
@@ -422,8 +454,20 @@ def create_android_receiver(callback):
 
 class InventoryApp(MDApp):
     dialog = None
-
+    def release_kb(self):
+        if platform == 'android':
+            Window.release_keyboard()
     def build(self):
+        if platform == 'android':
+            from jnius import autoclass
+            ActivityInfo = autoclass('android.content.pm.ActivityInfo')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            activity = PythonActivity.mActivity
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        
+        # 2. ป้องกันคีย์บอร์ดดันหน้าจอ (Pan mode)
+        Window.softinput_mode = 'pan'
+        
         init_db() 
         self.theme_cls.theme_style = "Light"
         self.theme_cls.primary_palette = "Orange"
