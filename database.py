@@ -31,8 +31,11 @@ def get_db_path():
         return os.path.join(CUR_DIR, DB_NAME)
 
 def get_connection():
-    # เรียกใช้ผ่านฟังก์ชัน get_db_path แทนการใช้ตัวแปร global ตรงๆ
-    return sqlite3.connect(get_db_path())
+    conn = sqlite3.connect(get_db_path(), timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
 
 def init_db():
     conn = get_connection() 
@@ -102,7 +105,125 @@ def query_product(barcode):
     product = cursor.fetchone()
     conn.close()
     return product
+def query_product_by_code(product_code):
+    conn = get_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("""
+        SELECT product_code,
+               product_name,
+               unit
+        FROM main_products
+        WHERE TRIM(product_code)=?
+    """, (product_code,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return row
+
+def get_existing_scan(location, barcode):
+    
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id,
+               qty
+        FROM Countstock_scan_data
+        WHERE location=?
+        AND barcode=?
+    """, (location, barcode))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return row
+
+
+def update_scan_qty(scan_id, qty):
+    
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE Countstock_scan_data
+        SET qty=?,
+            scan_date=?
+        WHERE id=?
+    """,
+    (
+        qty,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        scan_id
+    ))
+
+    conn.commit()
+
+    conn.close()
+    
+def save_edit_qty(location, barcode, qty):
+    
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE Countstock_scan_data
+        SET qty=?,
+            scan_date=?
+        WHERE location=?
+        AND barcode=?
+    """,
+    (
+        qty,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        location,
+        barcode
+    ))
+
+    conn.commit()
+
+    conn.close()    
+    
+def get_export_rows():
+    
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            location,
+            staff_name,
+            product_code,
+            barcode,
+            qty,
+            scan_date
+        FROM Countstock_scan_data
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
+
+def clear_scan_table():
+    
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM Countstock_scan_data")
+
+    conn.commit()
+
+    conn.close()  
 def insert_scan_result_to_db(location, staff, product_code, barcode, qty):
     """บันทึกข้อมูลการนับสต็อกใหม่ลงตาราง Countstock_scan_data"""
     conn = get_connection()

@@ -1,7 +1,7 @@
 # ไฟล์: main.py
 import os
 import sys
-import sqlite3
+from database import get_connection
 import requests  # ใช้แทน pyodbc สำหรับการสื่อสารผ่าน Network
 import threading
 from kivy.clock import Clock
@@ -27,8 +27,19 @@ else:
 Window.keyboard_anim_delay = 0
 
 from database import (
-    init_db, save_config, get_config, import_products_from_mssql,
-    query_product, insert_scan_result_to_db, get_recent_scans_from_table
+    init_db, save_config, 
+    get_config, 
+    import_products_from_mssql,
+    query_product, 
+    insert_scan_result_to_db, 
+    get_recent_scans_from_table,
+    query_product_by_code,
+    get_existing_scan,
+    update_scan_qty,
+    save_edit_qty,
+    get_export_rows,
+    clear_scan_table,
+    get_connection
 )
 
 CUR_DIR = os.path.dirname(__file__) if __file__ in locals() else os.getcwd()
@@ -142,8 +153,9 @@ class StockCountScreen(MDScreen):
     
     def on_enter(self):
         """เมื่อเข้าหน้าจอ ให้โฟกัสที่ช่อง location ทันที"""
-        Clock.schedule_once(lambda dt: setattr(self.ids.txt_location, 'focus', True), 0.2)
         self.start_android_scanner()
+        Clock.schedule_once(lambda dt: self.set_barcode_focus(), 0.5)
+        
         
     def release_kb(self):
         if platform == 'android':
@@ -156,12 +168,16 @@ class StockCountScreen(MDScreen):
         """เรียกฟังก์ชันนี้เพื่อดึง Focus กลับมาที่ช่องบาร์โค้ด"""
         self.update_recent_list()
         # ใช้ Clock หน่วงเวลาเพื่อให้แน่ใจว่า UI พร้อมรับ focus
-        Clock.schedule_once(lambda dt: setattr(self.ids.txt_barcode, 'focus', True), 0.3)
+        Clock.schedule_once(lambda dt:self.set_barcode_focus(), 0.2)
         self.start_android_scanner()    
     # def focus_barcode(self):
     #     self.update_recent_list()  
     #     self.start_android_scanner()
+    def set_barcode_focus(self):
+        
+        self.ids.txt_barcode.focus=False
 
+        self.ids.txt_barcode.focus=True
     def start_android_scanner(self):
         """เริ่มเปิดระบบดักจับ Intent บาร์โค้ดของเครื่อง CipherLab"""
         if platform == 'android':
@@ -255,15 +271,8 @@ class StockCountScreen(MDScreen):
         
         # 3. ถ้าหาจากบาร์โค้ดไม่พบ ให้ลองหาจาก รหัสสินค้า (Product Code)
         if not product:
-            try:
-                conn = sqlite3.connect('inventory.db')
-                cursor = conn.cursor()
-                # เปลี่ยนชื่อตาราง/คอลัมน์ให้ตรงกับฐานข้อมูลของคุณ (เช่น products)
-                cursor.execute("SELECT product_code, product_name, unit FROM main_products WHERE TRIM(product_code)=?", (barcode_input,))
-                product = cursor.fetchone()
-                conn.close()
-            except Exception as e:
-                print(f"Error searching by code: {e}")
+    
+             product = query_product_by_code(barcode_input)
             
         # 4. ถ้าหาไม่เจอทั้ง 2 อย่าง ให้แจ้งเตือน
         if not product:
@@ -277,25 +286,37 @@ class StockCountScreen(MDScreen):
         
         # ส่วนบันทึกลง DB ตามโค้ดเดิมของคุณ
         try:
-            conn = sqlite3.connect('inventory.db') 
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, qty FROM Countstock_scan_data WHERE location=? AND barcode=?", (location, barcode_input))
-            row = cursor.fetchone()
-            
+
+            row = get_existing_scan(location, barcode_input)
+
             if row:
+
                 scan_id, current_qty = row
+
                 new_qty = current_qty + 1
-                cursor.execute("UPDATE Countstock_scan_data SET qty=?, scan_date=? WHERE id=?", (new_qty, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), scan_id))
-                conn.commit()
+
+                update_scan_qty(scan_id, new_qty)
+
+                self.ids.lbl_product_code.text = f"รหัส: {product_code}"
                 self.ids.lbl_product_name.text = f"✓ [ยิงซ้ำ +1] รวม: {new_qty} {unit_name}"
+                self.ids.lbl_unit.text = f"หน่วย: {unit_name}"
+
             else:
-                insert_scan_result_to_db(location, staff, product_code, barcode_input, 1)
+
+                insert_scan_result_to_db(
+                    location,
+                    staff,
+                    product_code,
+                    barcode_input,
+                    1
+                )
+
                 self.ids.lbl_product_code.text = f"รหัส: {product_code}"
                 self.ids.lbl_product_name.text = f"ชื่อสินค้า: {product_name}"
                 self.ids.lbl_unit.text = f"หน่วย: {unit_name}"
-                
-            conn.close()
+
             self.play_sound(success=True)
+
         except Exception as e:
             print(f"Error Saving Scan: {e}")
 
@@ -353,12 +374,13 @@ class StockCountScreen(MDScreen):
             
         try:
             new_qty = int(new_qty_text)
-            conn = sqlite3.connect('inventory.db')
-            cursor = conn.cursor()
-            cursor.execute("UPDATE Countstock_scan_data SET qty=?, scan_date=? WHERE location=? AND barcode=?", 
-                           (new_qty, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_edit_data["location"], self.current_edit_data["barcode"]))
-            conn.commit()
-            conn.close()
+
+            save_edit_qty(
+                self.current_edit_data["location"],
+                self.current_edit_data["barcode"],
+                new_qty
+            )
+
         except Exception as e:
             print(f"Error Editing Qty: {e}")
             
@@ -381,11 +403,8 @@ class ExportScreen(MDScreen):
         db_name = config[2]    # ชื่อ Database ที่ตั้งค่าไว้ในหน้าจอ Config
         
         # ดึงข้อมูลจาก SQLite ในเครื่อง
-        lite_conn = sqlite3.connect('inventory.db')
-        lite_cursor = lite_conn.cursor()
-        lite_cursor.execute("SELECT location, staff_name, product_code, barcode, qty, scan_date FROM Countstock_scan_data")
-        rows = lite_cursor.fetchall()
-        lite_conn.close()
+        rows = get_export_rows()
+        #lite_conn.close()
         
         if not rows:
             MDApp.get_running_app().show_alert("⚠️ ไม่มีข้อมูล", "ไม่พบรายการค้างส่ง")
@@ -444,19 +463,7 @@ class ExportScreen(MDScreen):
     
         try:
 
-            conn = sqlite3.connect('inventory.db')
-
-            cursor = conn.cursor()
-
-            cursor.execute("DELETE FROM Countstock_scan_data")
-
-            conn.commit()
-
-            conn.close()
-
-            self.confirm_clear_dialog.dismiss()
-
-            MDApp.get_running_app().show_alert("✓ สำเร็จ", "ล้างข้อมูลในเครื่อง PDA เรียบร้อยแล้ว")
+            clear_scan_table()
 
         except Exception as e:
 
@@ -509,7 +516,8 @@ class InventoryApp(MDApp):
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         
         # 2. ป้องกันคีย์บอร์ดดันหน้าจอ (Pan mode)
-        Window.softinput_mode = 'pan'
+        #Window.softinput_mode='below_target'
+        Window.softinput_mode='resize'
         
         init_db() 
         self.theme_cls.theme_style = "Light"

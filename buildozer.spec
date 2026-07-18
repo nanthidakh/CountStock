@@ -8,7 +8,7 @@ package.domain = org.example
 
 icon.filename = %(source.dir)s/barcode.png
 
-version = 1.1
+version = 1.2
 
 source.dir = .
 

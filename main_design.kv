@@ -250,6 +250,7 @@ ScreenManager:
                     hint_text: "Location"
                     font_name: "ThaiFont"
                     multiline: False
+                    write_tab: False
                     on_text_validate: txt_staff.focus = True  # <--- เพิ่มจุดนี้
                     mode: "rectangle"
                     text: "001.01.01"
@@ -258,6 +259,7 @@ ScreenManager:
                     hint_text: "Staff:"
                     font_name: "ThaiFont"
                     multiline: False
+                    write_tab: False
                     on_text_validate: txt_barcode.focus = True # <--- เพิ่มจุดนี้
                     mode: "rectangle"
                     text: "Staff-A"
@@ -274,8 +276,8 @@ ScreenManager:
                 readonly: False
                 keyboard_suggestions: False
                 focus: True
+                use_handles: False
                 # แก้ไขการเรียกซ้ำซ้อน
-                on_focus: if self.focus: app.release_kb() # ปิดคีย์บอร์ดทันทีที่เผลอไปกด
                 on_text_validate: root.on_barcode_scan()
             
             # ส่วนแสดงสินค้า
