@@ -249,12 +249,16 @@ ScreenManager:
                     id: txt_location
                     hint_text: "Location"
                     font_name: "ThaiFont"
+                    multiline: False
+                    on_text_validate: txt_staff.focus = True  # <--- เพิ่มจุดนี้
                     mode: "rectangle"
                     text: "001.01.01"
                 MDTextField:
                     id: txt_staff
                     hint_text: "Staff:"
                     font_name: "ThaiFont"
+                    multiline: False
+                    on_text_validate: txt_barcode.focus = True # <--- เพิ่มจุดนี้
                     mode: "rectangle"
                     text: "Staff-A"
             
@@ -267,10 +271,11 @@ ScreenManager:
                 multiline: False
                 size_hint_y: None
                 height: "30dp"
+                readonly: False
                 keyboard_suggestions: False
                 focus: True
                 # แก้ไขการเรียกซ้ำซ้อน
-                on_focus: if self.focus: app.release_kb()
+                on_focus: if self.focus: app.release_kb() # ปิดคีย์บอร์ดทันทีที่เผลอไปกด
                 on_text_validate: root.on_barcode_scan()
             
             # ส่วนแสดงสินค้า
@@ -358,4 +363,13 @@ ScreenManager:
                 md_bg_color: 0.1, 0.5, 0.8, 1
                 on_release: root.export_data("Countstock_scan_slottag")
              
-            Widget:
+            Widget: # Spacer
+            
+            # ปุ่มลบข้อมูล
+            MDRaisedButton:
+                text: "ล้างข้อมูลการสแกนทั้งหมด"
+                font_name: "ThaiFont"
+                size_hint: (1, None)
+                height: "50dp"
+                md_bg_color: 0.8, 0.2, 0.2, 1 # สีแดง
+                on_release: root.show_confirm_clear_dialog() # เรียก Dialog ยืนยันก่อน

@@ -33,6 +33,7 @@ from database import (
 
 CUR_DIR = os.path.dirname(__file__) if __file__ in locals() else os.getcwd()
 
+
 class MainMenuScreen(MDScreen):
     def exit_app(self):
         sys.exit(0)
@@ -138,6 +139,12 @@ class ImportScreen(MDScreen):
 class StockCountScreen(MDScreen):
     edit_dialog = None
     edit_text_field = None
+    
+    def on_enter(self):
+        """เมื่อเข้าหน้าจอ ให้โฟกัสที่ช่อง location ทันที"""
+        Clock.schedule_once(lambda dt: setattr(self.ids.txt_location, 'focus', True), 0.2)
+        self.start_android_scanner()
+        
     def release_kb(self):
         if platform == 'android':
             Window.release_keyboard()
@@ -146,8 +153,14 @@ class StockCountScreen(MDScreen):
         self.manager.current = 'menu_screen'
         
     def focus_barcode(self):
-        self.update_recent_list()  
-        self.start_android_scanner()
+        """เรียกฟังก์ชันนี้เพื่อดึง Focus กลับมาที่ช่องบาร์โค้ด"""
+        self.update_recent_list()
+        # ใช้ Clock หน่วงเวลาเพื่อให้แน่ใจว่า UI พร้อมรับ focus
+        Clock.schedule_once(lambda dt: setattr(self.ids.txt_barcode, 'focus', True), 0.3)
+        self.start_android_scanner()    
+    # def focus_barcode(self):
+    #     self.update_recent_list()  
+    #     self.start_android_scanner()
 
     def start_android_scanner(self):
         """เริ่มเปิดระบบดักจับ Intent บาร์โค้ดของเครื่อง CipherLab"""
@@ -207,12 +220,20 @@ class StockCountScreen(MDScreen):
         if barcode_str:
             self.process_barcode(barcode_str.strip())
 
+    # def on_windows_keyboard_validate(self):
+    #     """รับค่าจากแป้นพิมพ์ (สำหรับเปิดทดสอบบนคอมพิวเตอร์)"""
+    #     barcode_input = self.ids.txt_barcode.text.strip()
+    #     if barcode_input:
+    #         self.process_barcode(barcode_input)
+    #     self.ids.txt_barcode.text = ""
     def on_windows_keyboard_validate(self):
-        """รับค่าจากแป้นพิมพ์ (สำหรับเปิดทดสอบบนคอมพิวเตอร์)"""
         barcode_input = self.ids.txt_barcode.text.strip()
         if barcode_input:
             self.process_barcode(barcode_input)
         self.ids.txt_barcode.text = ""
+        # ย้ำการ focus หลังสแกนเสร็จ
+        Clock.schedule_once(lambda dt: setattr(self.ids.txt_barcode, 'focus', True), 0.1)
+        
     def on_barcode_scan(self):
         """รองรับการเรียกใช้งานจากไฟล์ main_design.kv เมื่อกด Enter"""
         self.on_windows_keyboard_validate()
@@ -279,7 +300,8 @@ class StockCountScreen(MDScreen):
             print(f"Error Saving Scan: {e}")
 
         # 6. เคลียร์ช่องและค้าง Cursor พร้อมยิงต่อ
-        self.reset_scan_field()
+        Clock.schedule_once(lambda dt: setattr(self.ids.txt_barcode, 'focus', True), 0.2)
+        self.update_recent_list()
 
     def reset_scan_field(self):
         """ช่วยให้โค้ดสะอาดและ Cursor กลับมาพร้อมสแกนใหม่"""
@@ -419,16 +441,37 @@ class ExportScreen(MDScreen):
         self.confirm_clear_dialog.open()
 
     def clear_pda_table(self):
+    
         try:
+
             conn = sqlite3.connect('inventory.db')
+
             cursor = conn.cursor()
+
             cursor.execute("DELETE FROM Countstock_scan_data")
+
             conn.commit()
+
             conn.close()
+
             self.confirm_clear_dialog.dismiss()
+
             MDApp.get_running_app().show_alert("✓ สำเร็จ", "ล้างข้อมูลในเครื่อง PDA เรียบร้อยแล้ว")
+
         except Exception as e:
+
             print(f"Error Clearing Table: {e}")
+            
+    def show_confirm_clear_dialog(self):
+        self.confirm_clear_dialog = MDDialog(
+            title="⚠️ ยืนยันการล้างข้อมูล",
+            text="คุณต้องการลบข้อมูลการสแกนทั้งหมดออกจากเครื่องใช่หรือไม่?",
+            buttons=[
+                MDFlatButton(text="ยกเลิก", on_release=lambda x: self.confirm_clear_dialog.dismiss()),
+                MDRaisedButton(text="ลบข้อมูล", md_bg_color=[0.8, 0.2, 0.2, 1], on_release=lambda x: self.clear_pda_table()),
+            ],
+        )
+        self.confirm_clear_dialog.open()
 
 # --- โครงสร้างเชื่อมต่อ Java Class สำหรับการทำงานแบบ Background Intent Receiver ---
 def create_android_receiver(callback):
@@ -481,11 +524,11 @@ class InventoryApp(MDApp):
             for style in list(self.theme_cls.font_styles.keys()):
                 if style not in ["Icons"]:
                     self.theme_cls.font_styles[style] = [
-                        "ThaiFont",
-                        self.theme_cls.font_styles[style][1],
-                        self.theme_cls.font_styles[style][2],
-                        self.theme_cls.font_styles[style][3]
-                    ]
+                    "ThaiFont",
+                    self.theme_cls.font_styles[style][1],
+                    self.theme_cls.font_styles[style][2],
+                    self.theme_cls.font_styles[style][3]
+                ] # <--- ต้องมี ] ปิดตรงนี้ด้วย
         except Exception as e:
             print(f"Font Error: {e}")
 

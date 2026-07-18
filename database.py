@@ -2,13 +2,37 @@
 import sqlite3
 import os
 import requests
+import shutil
+from kivy.app import App
+from kivy.utils import platform
 from datetime import datetime
 
-CUR_DIR = os.path.dirname(__file__) if __file__ in locals() else os.getcwd()
-DB_PATH = os.path.join(CUR_DIR, "inventory.db")
+DB_NAME = "inventory.db"
+CUR_DIR = os.path.dirname(__file__) if '__file__' in locals() else os.getcwd()
+
+def get_db_path():
+    if platform == 'android':
+        # 1. ดึง Path ของโฟลเดอร์ที่แอปเขียนไฟล์ได้ใน Android
+        user_data_dir = App.get_running_app().user_data_dir
+        dest_path = os.path.join(user_data_dir, DB_NAME)
+        
+        # 2. ถ้ายังไม่มีไฟล์ในเครื่อง ให้คัดลอกจาก APK มาวาง
+        if not os.path.exists(dest_path):
+            source_path = os.path.join(CUR_DIR, DB_NAME)
+            if os.path.exists(source_path):
+                shutil.copyfile(source_path, dest_path)
+            else:
+                # กรณีหาไฟล์ใน APK ไม่เจอ (เพื่อความปลอดภัย)
+                print(f"Error: Not found source DB at {source_path}")
+        
+        return dest_path
+    else:
+        # บน PC ให้ใช้ Path เดิม
+        return os.path.join(CUR_DIR, DB_NAME)
 
 def get_connection():
-    return sqlite3.connect(DB_PATH)
+    # เรียกใช้ผ่านฟังก์ชัน get_db_path แทนการใช้ตัวแปร global ตรงๆ
+    return sqlite3.connect(get_db_path())
 
 def init_db():
     conn = get_connection() 

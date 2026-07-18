@@ -41,7 +41,7 @@ public class ExportHandler : IHttpHandler {
                         string tableName = data["table"].ToString();
                         foreach (var item in (System.Collections.ArrayList)data["data"]) {
                             var row = (Dictionary<string, object>)item;
-                            string sql = "INSERT INTO " + tableName + " (location, staff_name, product_code, barcode, qty, scan_date) VALUES (@loc, @staff, @code, @bar, @qty, @date, @export_date)";
+                            string sql = "INSERT INTO " + tableName + " (location, staff_name, product_code, barcode, qty, scan_date,export_date) VALUES (@loc, @staff, @code, @bar, @qty, @date, @export_date)";
                             SqlCommand cmd = new SqlCommand(sql, conn);
                             cmd.Parameters.AddWithValue("@loc", row["location"]);
                             cmd.Parameters.AddWithValue("@staff", row["staff"]);
