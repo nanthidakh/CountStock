@@ -30,3 +30,6 @@ android.accept_sdk_license = True
 android.archs = armeabi-v7a
 
 #android.enable_androidx = False
+android.orientation = portrait
+
+android.permissions = INTERNET, ACCESS_NETWORK_STATE, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
